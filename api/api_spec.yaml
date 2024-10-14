@@ -1,0 +1,554 @@
+openapi: 3.0.0
+info:
+  version: '1.0'
+  title: Golang Clean Architecture Template
+  description: This is a sample server for a Golang Clean Architecture Template.
+  contact:
+    name: Kelana Chandra Helyandika
+    url: https://kelanach.cyclic.app/
+    email: kelana.helyanedika@mhs.unsoed.ac.id
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Local Server V1
+
+tags:
+  - name: Auth
+    description: Authentication related operations
+  - name: User
+    description: User related operations
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    InternalServerError:
+      description: Internal Server Error
+      type: object
+      properties: 
+        errors: 
+          type: boolean 
+          example: true
+        message: 
+          type: string 
+          example: Internal Server Error
+
+    AccountNotHaveAccess:
+      description: Account Doesn't Have Access
+      type: object
+      properties: 
+        errors: 
+          type: boolean 
+          example: true
+        message: 
+          type: string 
+          example: Account Doesn't Have Access
+
+    DataNotFound:
+      description: Data Not Found
+      type: object 
+      properties:
+        errors: 
+          type: boolean
+          example: true
+        message: 
+          type: string 
+          example: Data Not Found
+
+    DataInputNotValid:
+      description: Input Not Valid
+      type: object
+      properties:
+        errors:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Data not valid
+
+
+paths:
+# ! ------------------------ ---- ------------------------ ! #
+# ! ------------------------ AUTH ------------------------ ! #
+# ! ------------------------ ---- ------------------------ ! #
+  /login:
+    post:
+      summary: Login for user 
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Success login 
+          content:  
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Success Login
+                  data: 
+                    type: object
+                    properties:
+                      token:
+                        type: string 
+                      token_type:
+                        type: string
+                        example: JWT
+                      expired_time:
+                        type: string 
+                        example: 30d
+        '400':
+          $ref: '#/components/schemas/DataInputNotValid'
+        '500':
+          $ref: '#/components/schemas/InternalServerError'
+
+
+
+
+
+# ! ------------------------ ---- ------------------------ ! #
+# ! ------------------------ USERS ------------------------ ! #
+# ! ------------------------ ---- ------------------------ ! #
+  /users:
+    get:
+      summary: Get data users (admin only)
+      tags:
+        - User
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+          required: false
+          description: Page number
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+          required: false
+          description: Limit data per page
+      responses:
+        '200':
+          description: Get users data
+          content:  
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: get users data
+                  data: 
+                    type: object
+                    properties:
+                      page:
+                        type: integer 
+                      per_page:
+                        type: integer
+                      total:
+                        type: integer
+                      users: 
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                            username:
+                              type: string
+                            role:
+                              type: number
+                            created_at:
+                              type: string
+                            updated_at:
+                              type: string
+        '401':
+          $ref: '#/components/schemas/AccountNotHaveAccess'
+        '400':
+          $ref: '#/components/schemas/DataInputNotValid'
+        '500':
+          $ref: '#/components/schemas/InternalServerError'
+
+    post:
+      summary: Create new user by admin (role value = 1 (admin) || 2 (user))
+      tags:
+        - User
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query 
+          name: db
+          schema:
+            type: string
+          required: false
+          description: set 1 for get data from database set sql or mongo, default with sql
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+                name:
+                  type: string
+                role:
+                  type: number 
+                  default: 1
+      responses:
+        '200':
+          description: Success create new account
+          content:  
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+        '400':
+          $ref: '#/components/schemas/DataInputNotValid'
+        '401':
+          $ref: '#/components/schemas/AccountNotHaveAccess'
+        '500':
+          $ref: '#/components/schemas/InternalServerError'
+
+    patch:
+      summary: Change user data (admin only for role) (user body req just need name)
+      tags:
+        - User
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query 
+          name: db
+          schema:
+            type: string
+          required: false
+          description: set 1 for get data from database set sql or mongo, default with sql
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: string
+                name: 
+                  type: string 
+                role:
+                  type: number
+      responses:
+        '200':
+          description: Success Change user data
+          content:  
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+        '401':
+          $ref: '#/components/schemas/AccountNotHaveAccess'
+        '404':
+          $ref: '#/components/schemas/DataNotFound'
+        '500':
+          $ref: '#/components/schemas/InternalServerError'
+
+
+
+
+  /users/self:
+    get:
+      summary: Get user data self info 
+      tags:
+        - User
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query 
+          name: db
+          schema:
+            type: string
+          required: false
+          description: set 1 for get data from database set sql or mongo, default with sql
+      responses:
+        '200':
+          description: get user self info
+          content:  
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: get user self info data
+                  data: 
+                    type: object
+                    properties:
+                      id:
+                        type: string 
+                      username:
+                        type: string
+                      name:
+                        type: string
+                      role:
+                        type: number 
+                      is_active: 
+                        type: boolean
+        '401':
+          $ref: '#/components/schemas/AccountNotHaveAccess'
+        '404':
+          $ref: '#/components/schemas/DataNotFound'
+        '500':
+          $ref: '#/components/schemas/InternalServerError'
+
+
+
+
+
+  /users/password:  
+    patch:
+      summary: Edit user password (self) 
+      tags:
+        - User
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query 
+          name: db
+          schema:
+            type: string
+          required: false
+          description: set 1 for get data from database set sql or mongo, default with sql
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password_now:
+                  type: string
+                new_password:
+                  type: string
+      responses:
+        '200':
+          description: success change user password
+          content:  
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+        '400':
+          $ref: '#/components/schemas/DataInputNotValid'
+        '401':
+          $ref: '#/components/schemas/AccountNotHaveAccess'
+        '500':
+          $ref: '#/components/schemas/InternalServerError'
+
+
+
+
+
+  /users/{username}:
+    get:
+      summary: Get user data self info (admin only)
+      tags:
+        - User
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query 
+          name: db
+          schema:
+            type: string
+          required: false
+          description: set 1 for get data from database set sql or mongo, default with sql
+        - in: path
+          name: username
+          schema:
+            type: string
+          required: true
+          description: Username of user
+      responses:
+        '200':
+          description: Get user data
+          content:  
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Get user data
+                  data: 
+                    type: object
+                    properties:
+                      id:
+                        type: string 
+                      username:
+                        type: string
+                      name:
+                        type: string
+                      role:
+                        type: string 
+                      is_active:
+                        type: boolean
+                      links:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            short_link:
+                              type: string
+                            long_link:
+                              type: string
+                            total_visited:
+                              type: number
+                            last_visited:
+                              type: string
+                            created_at:
+                              type: string
+                            updated_at:
+                              type: string
+        '401':
+          $ref: '#/components/schemas/AccountNotHaveAccess'
+        '404':
+          $ref: '#/components/schemas/DataNotFound'
+        '500':
+          $ref: '#/components/schemas/InternalServerError'
+
+
+  /users/status:
+    patch:
+      summary: Change user status (admin only)
+      tags:
+        - User
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query 
+          name: db
+          schema:
+            type: string
+          required: false
+          description: set 1 for get data from database set sql or mongo, default with sql
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: string
+      responses:
+        '200':
+          description: Success Change user status data
+          content:  
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+        '401':
+          $ref: '#/components/schemas/AccountNotHaveAccess'
+        '404':
+          $ref: '#/components/schemas/DataNotFound'
+        '500':
+          $ref: '#/components/schemas/InternalServerError'
+
+
+  /users/delete:
+    delete:
+      summary: Delete user data (admin only)
+      tags:
+        - User
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query 
+          name: db
+          schema:
+            type: string
+          required: false
+          description: set 1 for get data from database set sql or mongo, default with sql
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: string
+      responses:
+        '200':
+          description: Success delete data 
+          content:  
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+        '401':
+          $ref: '#/components/schemas/AccountNotHaveAccess'
+        '404':
+          $ref: '#/components/schemas/DataNotFound'
+        '500':
+          $ref: '#/components/schemas/InternalServerError'
+
