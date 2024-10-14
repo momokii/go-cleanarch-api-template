@@ -13,3 +13,10 @@ CREATE TABLE role (
     id BIGSERIAL NOT NULL PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE
 );
+
+insert into table role (name) values ('Admin');
+insert into table role (name) values ('User');
+insert into table role (name) values ('SuperAdmin');
+
+-- password: Admin123
+insert into table users (username, password, role) values ('admin1', '$2a$16$M7vqg6tCH.2oGkD7ePaelupK.jEQfdkkhihGatKb.OlUfCkluOMh6', 3);
