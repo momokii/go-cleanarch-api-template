@@ -14,6 +14,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/helmet"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v2/middleware/recover"
 
 	_ "github.com/joho/godotenv/autoload"
 )
@@ -60,6 +61,7 @@ func main() {
 			})
 		},
 	}))
+	app.Use(recover.New()) // recover will catch panics like from handler and recover the panic and throw to fiber error handler
 
 	// app.Get("/monitor", monitor.New()) // still beta on fiber
 
